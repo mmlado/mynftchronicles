@@ -1,1 +1,1 @@
-# nftopia
+# MyNFTChronicles
