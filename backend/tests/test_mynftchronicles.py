@@ -12,7 +12,7 @@ SYMBOL = 'TEST'
 
 @pytest.fixture
 def contract(MyNFTChronicles, accounts):
-    yield MyNFTChronicles.deploy(NAME, SYMBOL, 0, {'from': accounts[0]})
+    yield MyNFTChronicles.deploy(NAME, SYMBOL, {'from': accounts[0]})
 
 
 def test_erc721_interface(contract, accounts):

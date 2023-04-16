@@ -1,4 +1,4 @@
-# @version ^0.3.0
+# @version ^0.3.7
 
 
 from vyper.interfaces import ERC165
@@ -75,7 +75,6 @@ token_count: HashMap[address, uint256]
 number_of_tokens: uint256
 approvals: HashMap[uint256, address]
 operator: HashMap[address, HashMap[address, bool]]
-price: public(uint256)
 owner: public(address)
 
 name: public(String[64])
@@ -83,10 +82,9 @@ symbol: public(String[32])
 
 
 @external
-def __init__(_name: String[64], _symbol: String[32], _price: uint256):
+def __init__(_name: String[64], _symbol: String[32]):
     self.name = _name
     self.symbol = _symbol
-    self.price = _price
     self._transfer_ownership(msg.sender)
 
 
@@ -198,10 +196,9 @@ def transferOwnership(_newOwner: address):
 
 
 @external
-@payable
 def mint(_url: String[64]):
-    assert msg.value == self.price, "Not enough value"
     to: address = msg.sender
+    assert to == self.owner, "Forbidden"
     token_id: uint256 = self.number_of_tokens
     
     self.owner_of_nft[token_id] = to
@@ -211,23 +208,6 @@ def mint(_url: String[64]):
     
     log Transfer(empty(address), to, token_id)
 
-
-@external
-def withdraw():
-    current_balance: uint256 = self.balance
-    assert current_balance > 0, "No balance"
-    
-    send(self.owner, current_balance)
-
-@external
-def setPrice(_price: uint256):
-    assert msg.sender == self.owner, "Forbidden"
-    
-    old_price: uint256 = self.price
-
-    self.price = _price
-
-    log PriceChanged(old_price, _price)
 
 @external
 def burn(_token_id: uint256):

@@ -10,7 +10,7 @@ from helper import (
 
 @pytest.fixture
 def contract(MyNFTChronicles, accounts):
-    contract = MyNFTChronicles.deploy('', '', 0, {'from': accounts[0]})
+    contract = MyNFTChronicles.deploy('', '', {'from': accounts[0]})
 
     contract.mint(URI, {'from': accounts[0]})
     

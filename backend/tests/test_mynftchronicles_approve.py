@@ -9,7 +9,7 @@ from helper import (
 
 @pytest.fixture
 def contract(MyNFTChronicles, accounts):
-    yield MyNFTChronicles.deploy('', '', 0, {'from': accounts[0]})
+    yield MyNFTChronicles.deploy('', '', {'from': accounts[0]})
 
 
 def test_get_approved_invalid_token(contract, accounts):
