@@ -85,6 +85,7 @@ symbol: public(String[32])
 def __init__(_name: String[64], _symbol: String[32]):
     self.name = _name
     self.symbol = _symbol
+    
     self._transfer_ownership(msg.sender)
 
 
@@ -96,6 +97,17 @@ def supportsInterface(interface_id: bytes4) -> bool:
         ERC721_INTERFACE_ID,
         ERC721_METADATA_INTERFACE_ID
     ]
+
+
+@external
+def setup(_name: String[64], _symbol: String[32], _owner: address):
+    assert _owner != empty(address)
+    assert self.owner == empty(address)
+    
+    self.name = _name
+    self.symbol = _symbol
+    
+    self._transfer_ownership(_owner)
 
 
 @view

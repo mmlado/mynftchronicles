@@ -1,6 +1,13 @@
 # @version ^0.3.7
 
 
+from vyper.interfaces import ERC165
+
+
+interface MyNFTChronicles:
+    def setup(_name: String[64], _symbol: String[32], _owner: address): nonpayable
+
+
 interface Ownable:
     def owner() -> address: view
     
@@ -13,8 +20,8 @@ implements: Ownable
 
 
 event NewMyNFTChronicles: 
-    contract: indexed(address)
-    owner: indexed(address)
+    _contract: indexed(address)
+    _owner: indexed(address)
 
 
 event OwnershipTransferred:
@@ -22,11 +29,21 @@ event OwnershipTransferred:
     _newOwner: address
 
 
+ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
+
+
+TEMPLATE: public(immutable(address))
 owner: public(address)
 
 
 @external
-def __init__():
+def __init__(_template: address):
+    assert _template != empty(address)
+    assert _template.is_contract
+    assert ERC165(_template).supportsInterface(ERC721_INTERFACE_ID)
+    
+    TEMPLATE = _template
+    
     self._transfer_ownership(msg.sender)
 
 
@@ -56,11 +73,16 @@ def withdraw():
 
 @external
 @payable
-def mint() -> address:
-    to: address = msg.sender
+def mint(_name: String[64], _symbol: String[32]) -> address:
+    owner: address = msg.sender
+    assert owner != empty(address)
+
+    contract: address = create_forwarder_to(TEMPLATE)
+    MyNFTChronicles(contract).setup(_name, _symbol, owner)
+
+    log NewMyNFTChronicles(contract, owner)    
     
-    # log Transfer(empty(address), to, token_id)
-    return empty(address)
+    return contract
 
 
 @internal

@@ -4,14 +4,15 @@ import pytest
 
 from helper import (
     log_test,
-    URI,
     ZERO_ADDRESS
 )
 
 
 @pytest.fixture
-def contract(MyNFTChronicles_factory, accounts):
-    yield MyNFTChronicles_factory.deploy({'from': accounts[0]})
+def contract(MyNFTChronicles_factory, MyNFTChronicles, accounts):
+    chronicles = MyNFTChronicles.deploy('', '', {'from': accounts[0]})
+    yield MyNFTChronicles_factory.deploy(chronicles, {'from': accounts[0]})
+
 
 def test_owner(contract, accounts):
     assert contract.owner() == accounts[0]
@@ -63,7 +64,7 @@ def test_withdraw(contract, accounts):
     alice = accounts[0]
 
     balance = alice.balance()
-    contract.mint({'from': alice, 'value': 1})
+    contract.mint('', '', {'from': alice, 'value': 1})
     assert alice.balance() == balance - 1
 
     contract.withdraw()
@@ -79,4 +80,4 @@ def test_no_value(contract, accounts):
     alice = accounts[0]
 
 
-    contract.mint({'from': alice})
+    contract.mint('', '', {'from': alice})
