@@ -22,19 +22,11 @@ event OwnershipTransferred:
     _newOwner: address
 
 
-event PriceChanged:
-    _previousPrice: uint256
-    _newPrice: uint256
-
-
-price: public(uint256)
 owner: public(address)
 
 
 @external
-def __init__(_price: uint256):
-    self.price = _price
-
+def __init__():
     self._transfer_ownership(msg.sender)
 
 
@@ -61,21 +53,10 @@ def withdraw():
     
     send(self.owner, current_balance)
 
-@external
-def setPrice(_price: uint256):
-    assert msg.sender == self.owner, "Forbidden"
-    
-    old_price: uint256 = self.price
-
-    self.price = _price
-
-    log PriceChanged(old_price, _price)
-
 
 @external
 @payable
 def mint() -> address:
-    assert msg.value == self.price, "Not enough value"
     to: address = msg.sender
     
     # log Transfer(empty(address), to, token_id)
