@@ -75,7 +75,6 @@ def withdraw():
 @payable
 def mint(_name: String[64], _symbol: String[32]) -> address:
     owner: address = msg.sender
-    assert owner != empty(address)
 
     contract: address = create_forwarder_to(TEMPLATE)
     MyNFTChronicles(contract).setup(_name, _symbol, owner)

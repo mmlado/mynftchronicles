@@ -1,6 +1,6 @@
 import brownie
 import pytest
-
+from pprint import pprint
 
 from helper import (
     log_test,
@@ -76,8 +76,9 @@ def test_withdraw_no_fuds(contract, accounts):
         contract.withdraw()
 
 
-def test_no_value(contract, accounts):
+def test_mint(contract, accounts):
     alice = accounts[0]
 
+    transaction = contract.mint('', '', {'from': alice})
 
-    contract.mint('', '', {'from': alice})
+    log_test(transaction, 'NewMyNFTChronicles', _contract=transaction.return_value, _owner=alice)
