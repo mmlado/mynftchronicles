@@ -13,6 +13,10 @@ interface ERC721Metadata:
     def tokenURI(_tokenId: uint256) -> String[128]: view
 
 
+interface IERC5192:
+    def locked(_tokenId: uint256) -> bool: view
+
+
 interface Ownable:
     def owner() -> address: view
     
@@ -24,6 +28,7 @@ interface Ownable:
 implements: ERC165
 implements: ERC721
 implements: ERC721Metadata
+implements: IERC5192
 implements: Ownable
 
 
@@ -60,13 +65,18 @@ event OwnershipTransferred:
     _newOwner: address
 
 
-event PriceChanged:
-    _previousPrice: uint256
-    _newPrice: uint256
+event Locked:
+    tokenId: uint256
+
+
+event Unlocked:
+    tokenId: uint256
+
 
 ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
 ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
 ERC721_METADATA_INTERFACE_ID: constant(bytes4) =0x5b5e139f
+IERC5192_INTERFACE_ID: constant(bytes4) = 0xb45a3c0e
 
 
 owner_of_nft: HashMap[uint256, address]
@@ -80,11 +90,14 @@ owner: public(address)
 name: public(String[64])
 symbol: public(String[32])
 
+is_locked: bool
+
 
 @external
-def __init__(_name: String[64], _symbol: String[32]):
+def __init__(_name: String[64], _symbol: String[32], _locked: bool):
     self.name = _name
     self.symbol = _symbol
+    self.is_locked = _locked
     
     self._transfer_ownership(msg.sender)
 
@@ -95,17 +108,19 @@ def supportsInterface(interface_id: bytes4) -> bool:
     return interface_id in [
         ERC165_INTERFACE_ID,
         ERC721_INTERFACE_ID,
-        ERC721_METADATA_INTERFACE_ID
+        ERC721_METADATA_INTERFACE_ID,
+        IERC5192_INTERFACE_ID,
     ]
 
 
 @external
-def setup(_name: String[64], _symbol: String[32], _owner: address):
+def setup(_name: String[64], _symbol: String[32], _locked: bool, _owner: address):
     assert _owner != empty(address)
     assert self.owner == empty(address)
     
     self.name = _name
     self.symbol = _symbol
+    self.is_locked = _locked
     
     self._transfer_ownership(_owner)
 
@@ -134,6 +149,14 @@ def tokenURI(_tokenId: uint256) -> String[128]:
     assert self.owner_of_nft[_tokenId] != empty(address), "Invalid token"
 
     return self.id_to_url[_tokenId]
+
+
+@view
+@external
+def locked(_tokenId: uint256) -> bool:
+    assert self.owner_of_nft[_tokenId] != empty(address), "Invalid token"
+
+    return self.is_locked
 
 
 @view
@@ -169,6 +192,8 @@ def safeTransferFrom(_from: address, _to: address, _tokenId: uint256, _data: Byt
 @external
 @payable
 def approve(_approved: address, _tokenId: uint256):
+    assert not self.is_locked, "Locked"
+    
     sender: address = msg.sender
     owner: address = self.owner_of_nft[_tokenId]
     
@@ -183,6 +208,8 @@ def approve(_approved: address, _tokenId: uint256):
 
 @external
 def setApprovalForAll(_operator: address, _approved: bool):
+    assert not self.is_locked, "Locked"
+    
     sender: address = msg.sender
     assert _operator != sender, "Owner"
 
@@ -239,6 +266,8 @@ def burn(_token_id: uint256):
 
 @internal
 def _transfer(_from: address, _to: address, _token_id: uint256, _sender: address):
+    assert not self.is_locked, "Locked"
+    
     owner: address = self.owner_of_nft[_token_id]
     assert owner != empty(address), "Invalid token"
     assert owner == _from, "Forbidden"

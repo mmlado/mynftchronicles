@@ -5,7 +5,7 @@ from vyper.interfaces import ERC165
 
 
 interface MyNFTChronicles:
-    def setup(_name: String[64], _symbol: String[32], _owner: address): nonpayable
+    def setup(_name: String[64], _symbol: String[32], _locked: bool, _owner: address): nonpayable
 
 
 interface Ownable:
@@ -73,11 +73,11 @@ def withdraw():
 
 @external
 @payable
-def mint(_name: String[64], _symbol: String[32]) -> address:
+def mint(_name: String[64], _symbol: String[32], _locked: bool) -> address:
     owner: address = msg.sender
 
-    contract: address = create_forwarder_to(TEMPLATE)
-    MyNFTChronicles(contract).setup(_name, _symbol, owner)
+    contract: address = create_minimal_proxy_to(TEMPLATE)
+    MyNFTChronicles(contract).setup(_name, _symbol, _locked, owner)
 
     log NewMyNFTChronicles(contract, owner)    
     
