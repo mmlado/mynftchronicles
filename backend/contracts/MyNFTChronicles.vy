@@ -1,10 +1,12 @@
 # @version ^0.3.7
-
+# @dev Implementation of ERC-721 non-fungible token standard with ERC5192 for Minimal Soulbound NFTs
+# @author Mladen Milankovic (@mmlado)
 
 from vyper.interfaces import ERC165
 from vyper.interfaces import ERC721
 
 
+# Interface for metadata
 interface ERC721Metadata:
     def name() -> String[64]: view
 
@@ -12,11 +14,12 @@ interface ERC721Metadata:
 
     def tokenURI(_tokenId: uint256) -> String[128]: view
 
-
+# Interface for Minimal Soulbound Token
 interface IERC5192:
     def locked(_tokenId: uint256) -> bool: view
 
 
+# Interface for the contract to be ownable by an address
 interface Ownable:
     def owner() -> address: view
     
@@ -42,41 +45,63 @@ interface ERC721Receiver:
     ) -> bytes4: view
 
 
+# @dev Emits when ownership of any NFT changes by any mechanism. This event emits when NFTs are
+#      created (`from` == 0) and destroyed (`to` == 0). Exception: during contract creation, any
+#      number of NFTs may be created and assigned without emitting Transfer. At the time of any
+#      transfer, the approved address for that NFT (if any) is reset to none.
+# @param _from Sender of NFT (if address is zero address it indicates token creation).
+# @param _to Receiver of NFT (if address is zero address it indicates token destruction).
+# @param _tokenId The NFT that got transfered.
 event Transfer:
     _from: address
     _to: address
     _tokenId: uint256
 
 
+# @dev This emits when the approved address for an NFT is changed or reaffirmed. The zero
+#      address indicates there is no approved address. When a Transfer event emits, this also
+#      indicates that the approved address for that NFT (if any) is reset to none.
+# @param _owner Owner of NFT.
+# @param _approved Address that we are approving.
+# @param _tokenId NFT which we are approving.
 event Approval:
     _owner: address
     _approved: address
     _tokenId: uint256
 
 
+# @dev This emits when an operator is enabled or disabled for an owner. The operator can manage
+#      all NFTs of the owner.
+# @param _owner Owner of NFT.
+# @param _operator Address to which we are setting operator rights.
+# @param _approved Status of operator rights(true if operator rights are given and false if
+#        revoked).
 event ApprovalForAll:
     _owner: address
     _operator: address
     _approved: bool
 
 
+# @dev This emits when the owner of the contract is changed. It also emits during the contract creation
+# @param _previousOwner The owner that was removed from the contract.
+# @param _newOwner The owner that the contract ownership was transfered to. I.e. after this event the 
+#        current owner
 event OwnershipTransferred:
     _previousOwner: address
     _newOwner: address
 
-
+# @dev Emitted when the locking status is changed to locked.
+#      If a token is minted and the status is locked, this event should be emitted.
+# @param tokenId The identifier for a token.
 event Locked:
     tokenId: uint256
 
 
+# @dev Emitted when the locking status is changed to unlocked.
+#      If a token is minted and the status is unlocked, this event should be emitted.
+# @param tokenId The identifier for a token.
 event Unlocked:
     tokenId: uint256
-
-
-ERC165_INTERFACE_ID: constant(bytes4) = 0x01ffc9a7
-ERC721_INTERFACE_ID: constant(bytes4) = 0x80ac58cd
-ERC721_METADATA_INTERFACE_ID: constant(bytes4) =0x5b5e139f
-IERC5192_INTERFACE_ID: constant(bytes4) = 0xb45a3c0e
 
 
 owner_of_nft: HashMap[uint256, address]
@@ -92,9 +117,28 @@ symbol: public(String[32])
 
 is_locked: bool
 
+# @dev Static list of supported ERC165 interface ids
+SUPPORTED_INTERFACES: constant(bytes4[4]) = [
+    # ERC165 interface ID of ERC165
+    0x01ffc9a7,
+    # ERC165 interface ID of ERC721
+    0x80ac58cd,
+    # ERC165 interface ID of ERC721Metadata
+    0x5b5e139f,
+    # ERC165 interface ID of IERC5192
+    0xb45a3c0e
+]
+
+
 
 @external
 def __init__(_name: String[64], _symbol: String[32], _locked: bool):
+    """
+    @dev Contract constructor.
+    @param _name Name of the token
+    @param _symbol Symbol of the token
+    @param _locked Whether the tokens should be locked or transferable
+    """
     self.name = _name
     self.symbol = _symbol
     self.is_locked = _locked
@@ -105,12 +149,11 @@ def __init__(_name: String[64], _symbol: String[32], _locked: bool):
 @view
 @external
 def supportsInterface(interface_id: bytes4) -> bool:
-    return interface_id in [
-        ERC165_INTERFACE_ID,
-        ERC721_INTERFACE_ID,
-        ERC721_METADATA_INTERFACE_ID,
-        IERC5192_INTERFACE_ID,
-    ]
+    """
+    @dev Interface identification is specified in ERC-165.
+    @param interface_id Id of the interface
+    """
+    return interface_id SUPPORTED_INTERFACES
 
 
 @external
@@ -124,6 +167,8 @@ def setup(_name: String[64], _symbol: String[32], _locked: bool, _owner: address
     
     self._transfer_ownership(_owner)
 
+
+### VIEW FUNCTIONS ###
 
 @view
 @external
